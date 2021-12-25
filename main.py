@@ -30,6 +30,8 @@ def makeMaze(dimX, dimY):
         for x in range(4):
             starterMap[randRow-1][random.randint(0, dimY-1)] = 0
             starterMap[random.randint(0, dimX-1)][randColumn-1] = 0
+            # starterMap[randRow-1][random.randint(0, dimY-1)] = 0
+            starterMap[random.randint(0, dimX-1)][randColumn-1] = 0
     # Add blank cells fro entrance,exit and around them:
     starterMap[0][0] = 0
     starterMap[0][1] = 0

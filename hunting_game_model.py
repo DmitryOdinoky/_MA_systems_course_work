@@ -3,9 +3,11 @@ from cherrypy.process.plugins import Monitor
 import os
 import random
 import simplejson
+import sys
+import numpy as np
 
 MEDIA_DIR = os.path.join(os.path.abspath("."), u"media")
-
+LOG_DIR = os.path.join(os.path.abspath("."), u"logs")
 
 config = {'/media':
                 {'tools.staticdir.on': True,
@@ -13,16 +15,28 @@ config = {'/media':
                  'tools.encode.text_only': False
                 }
         }
+    
+    
+
 
 class ControlCenter:
     
-    def __init__(self, reports=[] ):
+    def __init__(self, report_idx=[], report_sensored_prey = [], report_sensored_hunter = [],
+                 report_dist_to_hunt = [], report_list_of_mins_prey = []):
         
-        self.reports = reports
+        self.report_idx = report_idx
+        self.report_sensored_prey = report_sensored_prey
+        self.report_sensored_hunter = report_sensored_hunter
+        self.report_dist_to_hunt = report_dist_to_hunt
+        self.report_list_of_mins_prey = report_list_of_mins_prey
+        
 
 
 class Cell:
     def __init__(self, nr=0, table_size=0, already_filled=[]):
+        
+        self.state = 0
+        
         self.nr = nr
         self.x = int(random.uniform(0, table_size) - 1)
         self.y = int(random.uniform(0, table_size) - 1)
@@ -39,10 +53,15 @@ class Cell:
 
 
 class Hunter(Cell):
+
+
+    
     def __repr__(self):
+        
         return '<td style="background:#36679C">%d</td>' % self.nr
         # return '%dx%d' % (self.x, self.y)
 
+    
 
 class Prey(Cell):
     def __repr__(self):
@@ -56,6 +75,9 @@ class World(object):
     N_HUNT = 12
     N_PREY = 5
     RESPAWN_TIME = 5  # iterations
+    
+    
+
 
     def __init__(self):
         super(World, self).__init__()
@@ -166,39 +188,185 @@ class World(object):
 
     def distance(self, a, b):
         # '''Computes Manhattan distance between 2 cells'''
-        return abs(a.x - b.x) + abs(a.y - b.y)
+        
+        distance = abs(a.x - b.x) + abs(a.y - b.y)
+        
+        
+        return distance
+    
+    def use_sensors(self, h):
+        
+        perception_hunters = [0, 0, 0, 0] # 
+        perception_prey = [0, 0, 0, 0] # 
+        
+
+        
+        # Distance to hunters, within treshold
+        
+        
+        list_of_distances = []
+        list_of_mins_prey = []
+
+        
+        for j in self.hunters:
+            
+            
+            
+    
+            # dist_to_hunt = self.distance(h, j)
+            # if dist_to_hunt == None or dist_to_hunt == []: dist_to_hunt = 0
+            # list_of_distances.append(dist_to_hunt)
+            
+           
+            # dist_list.append(dist_to_hunt)
+            
+            # if h==j:
+            #     continue
+            
+            
+            
+            dist = self.distance(h, j)
+   
+            
+            
+            if dist <= 12.0 and dist > 0:     
+                dist = dist
+            else: dist = np.NaN
+            
+            
+            if dist != np.NaN:            
+                
+                dist = float(dist) + 1
+
+            # Vertical
+                if j.x < h.x:
+                    perception_hunters[0] += dist
+                elif j.x > h.x:
+                    perception_hunters[2] += dist
+                # Horizontal
+                if j.y < h.y:
+                    perception_hunters[3] += dist
+                elif j.y > h.y:
+                    perception_hunters[1] += dist
+                    
+            
+
+            
+            # perception_hunters[4] = 0
+            
+            # perception_hunters[5] = j.state
+            
+            list_of_distances.append(dist)
+            
+            # distances_to_hunt = dist_list
+            
+
+        
+        
+                    
+        for j in self.prey:
+            
+            
+            dist = self.distance(h, j)
+            
+            if dist <= 12.0 and dist > 0:     
+                dist = dist
+            else: dist = np.NaN
+            
+            
+            if dist != np.NaN:            
+                
+                dist = float(dist) + 1
+
+            # Vertical
+                if j.x < h.x:
+                    perception_prey[0] += dist
+                elif j.x > h.x:
+                    perception_prey[2] += dist
+                # Horizontal
+                if j.y < h.y:
+                    perception_prey[3] += dist
+                elif j.y > h.y:
+                    perception_prey[1] += dist
+                    
+            
+            
+            
+            # perception_prey[4] = 0
+            
+            # perception_prey[5] = j.state
+  
+        perception_hunters = np.array(perception_hunters)
+        perception_prey = np.array(perception_prey)
+        distances_to_hunt = np.array(list_of_distances)
+        list_of_mins_prey = np.nanmin(perception_prey)        
+            
+        return perception_hunters, perception_prey, distances_to_hunt, list_of_mins_prey
 
     def score_directions(self, h):
         scores = [0, 0, 0, 0]
         # Weak rejection force from other hunters
         for j in self.hunters:
+            
             if h==j:
                 continue
-            dist = float(self.distance(h, j)) + 1
+            
+            dist = self.distance(h, j)
+            
+            if dist <= 12.0:
+                dist = dist
+            else: dist = None
+            
+            
+            if dist != None:            
+                
+                dist = float(dist) + 1
+            
+
             # Vertical
-            if j.x < h.x:
-                scores[2] += 1 / (dist ** 2)
-            elif j.x > h.x:
-                scores[0] += 1 / (dist ** 2)
-            # Horizontal
-            if j.y < h.y:
-                scores[1] += 1 / (dist ** 2)
-            elif j.y > h.y:
-                scores[3] += 1 / (dist ** 2)
+                if j.x < h.x:
+                    scores[2] += 1 / (dist ** 2)
+                elif j.x > h.x:
+                    scores[0] += 1 / (dist ** 2)
+                # Horizontal
+                if j.y < h.y:
+                    scores[1] += 1 / (dist ** 2)
+                elif j.y > h.y:
+                    scores[3] += 1 / (dist ** 2)
+                    
+                
+        
+        # print(dist)
+        
         # Strong attraction force from prey
         for j in self.prey:
-            dist = float(self.distance(h, j)) + 1
+            
+            
+            
+            dist = self.distance(h, j)
+            
+            
+            if dist <= 12.0:     
+                dist = dist
+            else: dist = None
+            
+            
+            
+            if dist != None:
+                dist = float(dist) + 1
             # Vertical
-            if j.x < h.x:
-                scores[0] += 10 / (dist ** 2)
-            elif j.x > h.x:
-                scores[2] += 10 / (dist ** 2)
-            # Horizontal
-            if j.y < h.y:
-                scores[3] += 10 / (dist ** 2)
-            elif j.y > h.y:
-                scores[1] += 10 / (dist ** 2)
+                if j.x < h.x:
+                    scores[0] += 10 / (dist ** 2)
+                elif j.x > h.x:
+                    scores[2] += 10 / (dist ** 2)
+                # Horizontal
+                if j.y < h.y:
+                    scores[3] += 10 / (dist ** 2)
+                elif j.y > h.y:
+                    scores[1] += 10 / (dist ** 2)
+                        
         return scores
+
 
     def respawn_prey(self):
         already_filled = [(k.x, k.y) for k in self.prey+self.hunters]
@@ -216,20 +384,25 @@ world = World()
 
 
 def iterate():
-    # print("ITERATION:", world.iteration_round)
-    world.controlCenter.reports.append(world.iteration_round)
-    print("ITERATION:", world.controlCenter.reports[-1])
+    print("ITERATION:", world.iteration_round)
+    # print(LOG_DIR)
+    # sys.exit()
+    
+    # print("ITERATION:", world.controlCenter.reports[-1])
 
     # Check if prey dies
     for i in world.prey:
         if world.prey_trapped(i):
             world.prey.remove(i)
             world.respawn_countdowns.append(World.RESPAWN_TIME)
-
+            
+        
+    prey_list = []
     # Prey movement
     for i in world.prey:
         alternatives = [world.adjacent_cell(i.x, i.y, d) for d in range(4)]
         alternatives = [a for a in alternatives if a and world.empty_cell(a)]
+        prey_list.append(alternatives)
 
         if not alternatives:
             # Stay
@@ -237,11 +410,42 @@ def iterate():
 
         new_pos = random.choice(alternatives)
         i.move(new_pos)
+    
+    
 
+    
     # Hunters movement
+    world.controlCenter.report_sensored_prey = []
+    world.controlCenter.report_sensored_hunter = []
+    world.controlCenter.report_dist_to_hunt = []
+    world.controlCenter.report_list_of_mins_prey = []
+    
     for i in world.hunters:
+        
+        # world.controlCenter.report_idx.append(world.iteration_round)
+        # print(i.nr)
+        
+        # sys.exit()
+        
         moves = True
         scores = world.score_directions(i)
+        perc_hunters, perc_prey, distances_to_hunt, list_of_mins_prey = world.use_sensors(i)
+        
+        # print(type(distances_to_hunt))
+        # np.savetxt(LOG_DIR + '/' +  f'iter_{world.iteration_round}.csv',  perc_hunters, fmt='%10.1f', delimiter=",")
+        
+        # sys.exit()
+        # print(perc)
+        
+        
+        world.controlCenter.report_sensored_prey.append(np.array(perc_prey))
+        world.controlCenter.report_sensored_hunter.append(np.array(perc_hunters))
+        # print(np.shape(distances_to_hunt))
+        world.controlCenter.report_dist_to_hunt.append(np.array(distances_to_hunt))
+        world.controlCenter.report_list_of_mins_prey.append(np.array(list_of_mins_prey))
+        # world.controlCenter.report_dist_to_hunt = world.controlCenter.report_dist_to_hunt
+           
+        
         direction = scores.index(max(scores))
         new_pos = world.adjacent_cell(i.x, i.y, direction)
         while (not new_pos or not world.empty_cell(new_pos)) and sum(scores) != 0:
@@ -256,7 +460,29 @@ def iterate():
         if moves and sum(scores) != 0:
             # Not completly blocked
             i.move(new_pos)
-
+            
+        # print(np.expand_dims(distances_to_hunt, axis = 1))
+        # print(np.shape(distances_to_hunt)) 
+            
+    out_prey = np.array(world.controlCenter.report_sensored_prey)       
+    out_hunter = np.array(world.controlCenter.report_sensored_hunter) 
+    out_dist_to_hunt = np.array(world.controlCenter.report_dist_to_hunt)
+    
+    out_list_of_mins_prey = np.array(world.controlCenter.report_list_of_mins_prey)
+    out_list_of_mins_prey[out_list_of_mins_prey == 0.0] = np.NaN
+    
+    # print(np.min(out_dist_to_hunt))
+    
+    # print(out_dist_to_hunt)
+    # print(np.shape(np.squeeze(world.controlCenter.report_dist_to_hunt))) 
+    
+    np.savetxt(LOG_DIR + '/' +  f'last_iter_prey.csv', out_prey, fmt='%10.1f', delimiter=",")
+    np.savetxt(LOG_DIR + '/' +  f'last_iter_hunter.csv', out_hunter, fmt='%10.1f', delimiter=",")
+    np.savetxt(LOG_DIR + '/' +  f'last_iter_dist_to_hunt.csv', out_dist_to_hunt, fmt='%10.1f', delimiter=",")
+    np.savetxt(LOG_DIR + '/' +  f'last_iter_out_list_of_mins_prey.csv', out_list_of_mins_prey, fmt='%10.1f', delimiter=",")
+    
+    
+    
     # Rounds count
     world.iteration_round += 1
     # Handle respawning
