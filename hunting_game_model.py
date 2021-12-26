@@ -77,6 +77,8 @@ class World(object):
     RESPAWN_TIME = 5  # iterations
     
     
+    
+    
 
 
     def __init__(self):
@@ -86,6 +88,9 @@ class World(object):
         already_filled = []
 
         self.iteration_round = 0
+        
+        self.treshold = 50
+        self.treshold_2 = 50
 
         # Used to respawn dead prey
         self.prey_idx = World.N_PREY - 1
@@ -194,6 +199,8 @@ class World(object):
         
         return distance
     
+
+    
     def use_sensors(self, h):
         
         perception_hunters = [0, 0, 0, 0] # 
@@ -229,7 +236,7 @@ class World(object):
    
             
             
-            if dist <= 12.0 and dist > 0:     
+            if dist <= self.treshold and dist > 0:     
                 dist = dist
             else: dist = np.NaN
             
@@ -269,7 +276,7 @@ class World(object):
             
             dist = self.distance(h, j)
             
-            if dist <= 12.0 and dist > 0:     
+            if dist <= self.treshold and dist > 0:     
                 dist = dist
             else: dist = np.NaN
             
@@ -307,63 +314,70 @@ class World(object):
         scores = [0, 0, 0, 0]
         # Weak rejection force from other hunters
         for j in self.hunters:
+            if h==j:
+                continue
+            dist = float(self.distance(h, j)) + 1
+            # print(dist)
+            
+            if dist <= self.treshold_2 and dist > 0:     
+                dist = dist
+            else: dist = np.NaN            
+            
+            # Vertical
+            if j.x < h.x:
+                scores[2] += 1 / (dist ** 2)
+            elif j.x > h.x:
+                scores[0] += 1 / (dist ** 2)
+            # Horizontal
+            if j.y < h.y:
+                scores[1] += 1 / (dist ** 2)
+            elif j.y > h.y:
+                scores[3] += 1 / (dist ** 2)
+        # Strong attraction force from prey
+        for j in self.prey:
+            dist = float(self.distance(h, j)) + 1
+            
+            if dist <= self.treshold_2 and dist > 0:     
+                dist = dist
+            else: dist = np.NaN                        
+            
+            # Vertical
+            if j.x < h.x:
+                scores[0] += 10 / (dist ** 2)
+            elif j.x > h.x:
+                scores[2] += 10 / (dist ** 2)
+            # Horizontal
+            if j.y < h.y:
+                scores[3] += 10 / (dist ** 2)
+            elif j.y > h.y:
+                scores[1] += 10 / (dist ** 2)
+        return scores
+
+
+    def score_directions_to_hunter(self, h):
+        scores = [0, 0, 0, 0]
+
+        
+        # Strong attraction force from hunter
+        for j in self.hunters:
+            
             
             if h==j:
                 continue
-            
-            dist = self.distance(h, j)
-            
-            if dist <= 12.0:
-                dist = dist
-            else: dist = None
-            
-            
-            if dist != None:            
-                
-                dist = float(dist) + 1
-            
-
-            # Vertical
-                if j.x < h.x:
-                    scores[2] += 1 / (dist ** 2)
-                elif j.x > h.x:
-                    scores[0] += 1 / (dist ** 2)
-                # Horizontal
-                if j.y < h.y:
-                    scores[1] += 1 / (dist ** 2)
-                elif j.y > h.y:
-                    scores[3] += 1 / (dist ** 2)
                     
-                
-        
-        # print(dist)
-        
-        # Strong attraction force from prey
-        for j in self.prey:
-            
-            
-            
-            dist = self.distance(h, j)
-            
-            
-            if dist <= 12.0:     
-                dist = dist
-            else: dist = None
-            
-            
-            
-            if dist != None:
-                dist = float(dist) + 1
+
+            dist = float(self.distance(h, j)) + 1
             # Vertical
-                if j.x < h.x:
-                    scores[0] += 10 / (dist ** 2)
-                elif j.x > h.x:
-                    scores[2] += 10 / (dist ** 2)
-                # Horizontal
-                if j.y < h.y:
-                    scores[3] += 10 / (dist ** 2)
-                elif j.y > h.y:
-                    scores[1] += 10 / (dist ** 2)
+            if j.x < h.x:
+                scores[0] += 10 / (dist ** 2)
+            elif j.x > h.x:
+                scores[2] += 10 / (dist ** 2)
+            # Horizontal
+            if j.y < h.y:
+                scores[3] += 10 / (dist ** 2)
+            elif j.y > h.y:
+                scores[1] += 10 / (dist ** 2)
+        return scores
                         
         return scores
 
@@ -394,7 +408,7 @@ def iterate():
     for i in world.prey:
         if world.prey_trapped(i):
             world.prey.remove(i)
-            world.respawn_countdowns.append(World.RESPAWN_TIME)
+            # world.respawn_countdowns.append(World.RESPAWN_TIME)
             
         
     prey_list = []
@@ -419,6 +433,9 @@ def iterate():
     world.controlCenter.report_sensored_hunter = []
     world.controlCenter.report_dist_to_hunt = []
     world.controlCenter.report_list_of_mins_prey = []
+
+
+    
     
     for i in world.hunters:
         
@@ -427,9 +444,9 @@ def iterate():
         
         # sys.exit()
         
-        moves = True
-        scores = world.score_directions(i)
-        perc_hunters, perc_prey, distances_to_hunt, list_of_mins_prey = world.use_sensors(i)
+        i.state = 0
+        
+        perc_hunters, perc_prey, distances_to_hunt, list_of_mins_prey = world.use_sensors(i) 
         
         # print(type(distances_to_hunt))
         # np.savetxt(LOG_DIR + '/' +  f'iter_{world.iteration_round}.csv',  perc_hunters, fmt='%10.1f', delimiter=",")
@@ -440,29 +457,20 @@ def iterate():
         
         world.controlCenter.report_sensored_prey.append(np.array(perc_prey))
         world.controlCenter.report_sensored_hunter.append(np.array(perc_hunters))
-        # print(np.shape(distances_to_hunt))
         world.controlCenter.report_dist_to_hunt.append(np.array(distances_to_hunt))
-        world.controlCenter.report_list_of_mins_prey.append(np.array(list_of_mins_prey))
-        # world.controlCenter.report_dist_to_hunt = world.controlCenter.report_dist_to_hunt
-           
         
-        direction = scores.index(max(scores))
-        new_pos = world.adjacent_cell(i.x, i.y, direction)
-        while (not new_pos or not world.empty_cell(new_pos)) and sum(scores) != 0:
-            # If the best direction is blocked, just keep current position
-            if not world.empty_cell(new_pos):
-                moves = False
-                break
-            # Take the next biggest
-            scores[direction] = 0
-            direction = scores.index(max(scores))
-            new_pos = world.adjacent_cell(i.x, i.y, direction)
-        if moves and sum(scores) != 0:
-            # Not completly blocked
-            i.move(new_pos)
+        # print(np.array(distances_to_hunt))
+        # print(np.shape(np.array(distances_to_hunt)))
+        
+        world.controlCenter.report_list_of_mins_prey.append(np.array(list_of_mins_prey))
+        
+
+
+
             
         # print(np.expand_dims(distances_to_hunt, axis = 1))
-        # print(np.shape(distances_to_hunt)) 
+        # print(np.shape(distances_to_hunt))
+        
             
     out_prey = np.array(world.controlCenter.report_sensored_prey)       
     out_hunter = np.array(world.controlCenter.report_sensored_hunter) 
@@ -471,6 +479,146 @@ def iterate():
     out_list_of_mins_prey = np.array(world.controlCenter.report_list_of_mins_prey)
     out_list_of_mins_prey[out_list_of_mins_prey == 0.0] = np.NaN
     
+    
+    
+    
+    sorted_indecies = np.argsort(out_list_of_mins_prey)
+    
+    if out_list_of_mins_prey[sorted_indecies[0]] != np.NaN:
+            
+            for j in range(0, round((world.N_HUNT/3))):
+                    
+                world.hunters[sorted_indecies[j]].state = 1
+    
+                
+    
+    counter = 0
+    
+    for i in range(0, world.N_HUNT+1):
+        
+        if world.hunters[i].state == 0:
+            
+            best_idx_list = np.argsort(out_dist_to_hunt[i,:])
+            for j in range (0,2):
+                world.hunters[best_idx_list[j]].state = 2
+                counter += 1
+                
+        if counter > 2:
+            
+            break
+                
+    for i in world.hunters:
+        
+         perc_hunters, perc_prey, distances_to_hunt, list_of_mins_prey = world.use_sensors(i)
+         
+         if max(perc_prey) < 40.0 or min(perc_hunters):
+             
+             i.state = 1
+
+                
+                                       
+    for i in world.hunters:
+        
+        # if i.state == 0:
+            
+        #     alternatives = [world.adjacent_cell(i.x, i.y, d) for d in range(4)]
+        #     alternatives = [a for a in alternatives if a and world.empty_cell(a)]
+        #     prey_list.append(alternatives)
+    
+        #     if not alternatives:
+        #         # Stay
+        #         continue
+    
+        #     new_pos = random.choice(alternatives)
+        #     i.move(new_pos)
+
+        if i.state == 0:            
+                
+            
+    
+            alternatives = [world.adjacent_cell(i.x, i.y, d) for d in range(4)]
+            alternatives = [a for a in alternatives if a and world.empty_cell(a)]
+            prey_list.append(alternatives)
+    
+            if not alternatives:
+                # Stay
+                continue
+    
+            new_pos = random.choice(alternatives)
+            i.move(new_pos)    
+
+
+        if i.state == 1:            
+                
+            
+    
+            moves = True
+            scores = world.score_directions(i)
+            # print(scores)
+                              
+            
+            direction = scores.index(max(scores))
+            new_pos = world.adjacent_cell(i.x, i.y, direction)
+            
+            while (not new_pos or not world.empty_cell(new_pos)) and sum(scores) != 0:
+                # If the best direction is blocked, just keep current position
+                if not world.empty_cell(new_pos):
+                    moves = False
+                    i.state == 0
+                    break
+                # Take the next biggest
+                scores[direction] = 0
+                direction = scores.index(max(scores))
+                new_pos = world.adjacent_cell(i.x, i.y, direction)
+            
+            if moves and sum(scores) != 0:
+                # Not completly blocked
+                i.move(new_pos)        
+            
+
+        if i.state == 2:    
+            
+            moves = True
+            scores = world.score_directions_to_hunter(i)
+                              
+            
+            direction = scores.index(max(scores))
+            new_pos = world.adjacent_cell(i.x, i.y, direction)
+            
+            while (not new_pos or not world.empty_cell(new_pos)) and sum(scores) != 0:
+                # If the best direction is blocked, just keep current position
+                if not world.empty_cell(new_pos):
+                    moves = False
+                    i.state == 0
+                    break
+                # Take the next biggest
+                scores[direction] = 0
+                direction = scores.index(max(scores))
+                new_pos = world.adjacent_cell(i.x, i.y, direction)
+            
+            if moves and sum(scores) != 0:
+                # Not completly blocked
+                i.move(new_pos)   
+    
+    
+    # print(sorted_indecies)
+    # sys.exit()
+    
+    # print(np.shape(np.expand_dims(out_list_of_mins_prey, axis=1)))
+    # print(np.shape(np.expand_dims(np.arange(0, out_list_of_mins_prey.size).T , axis=1)))
+    
+    # print(out_list_of_mins_prey)
+    # print(np.arange(0, out_list_of_mins_prey.size))
+    
+    
+    # a = np.expand_dims(out_list_of_mins_prey, axis=1)
+    # b = np.expand_dims(np.arange(0, out_list_of_mins_prey.size), axis=1)
+    
+    # c = np.append(b,a,axis=1)
+    # c =  c[np.lexsort(np.fliplr(c).T)]
+    
+    # print(c)
+    # sys.exit()
     # print(np.min(out_dist_to_hunt))
     
     # print(out_dist_to_hunt)
@@ -479,7 +627,7 @@ def iterate():
     np.savetxt(LOG_DIR + '/' +  f'last_iter_prey.csv', out_prey, fmt='%10.1f', delimiter=",")
     np.savetxt(LOG_DIR + '/' +  f'last_iter_hunter.csv', out_hunter, fmt='%10.1f', delimiter=",")
     np.savetxt(LOG_DIR + '/' +  f'last_iter_dist_to_hunt.csv', out_dist_to_hunt, fmt='%10.1f', delimiter=",")
-    np.savetxt(LOG_DIR + '/' +  f'last_iter_out_list_of_mins_prey.csv', out_list_of_mins_prey, fmt='%10.1f', delimiter=",")
+    np.savetxt(LOG_DIR + '/' +  f'last_iter_out_list_of_mins_prey.csv', sorted_indecies, fmt='%10.1f', delimiter=",")
     
     
     
@@ -491,6 +639,8 @@ def iterate():
         if world.respawn_countdowns[i] <= 0:
             world.respawn_prey()
     world.respawn_countdowns = [a for a in world.respawn_countdowns if a > 0]
+
+
 
 
 class HuntingGameApp(object):
