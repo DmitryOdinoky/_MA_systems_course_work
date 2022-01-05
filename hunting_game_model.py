@@ -89,7 +89,7 @@ class World(object):
 
         self.iteration_round = 0
         
-        self.treshold = 30
+        self.treshold = 50
         self.treshold_2 = 30
 
         # Used to respawn dead prey
@@ -450,11 +450,13 @@ def iterate():
     
     sorted_indecies = np.argsort(out_list_of_mins_prey)
     
-    if out_list_of_mins_prey[sorted_indecies[0]] != np.NaN:
-            
-            for j in range(0, round((world.N_HUNT/4))):
-                    
-                world.hunters[sorted_indecies[j]].state = 1
+    for i in world.hunters:
+    
+        if out_list_of_mins_prey[sorted_indecies[0]] != np.NaN:
+                
+                for j in range(0, round((world.N_HUNT/4))):
+                        
+                    world.hunters[sorted_indecies[j]].state = 1
     
                 
     
