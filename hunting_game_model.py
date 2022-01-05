@@ -651,7 +651,7 @@ class HuntingGameApp(object):
 
 Monitor(cherrypy.engine, iterate, frequency=1).subscribe()
 
-# Hack for Heroku
+# Hack for Heroku ---
 from cherrypy.process import servers
 def fake_wait_for_occupied_port(host, port): return
 servers.wait_for_occupied_port = fake_wait_for_occupied_port
