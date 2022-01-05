@@ -59,18 +59,18 @@ class Hunter(Cell):
     def __repr__(self):
         
         return '<td style="background:#36679C">%d</td>' % self.nr
-        # return '%dx%d' % (self.x, self.y)
+
 
     
 
 class Prey(Cell):
     def __repr__(self):
         return '<td style="background:#B50724">%d</td>' % self.nr
-        # return '%dx%d' % (self.x, self.y)
+
 
 
 class World(object):
-    # '''Constants'''
+
     N = 25
     N_HUNT = 12
     N_PREY = 5
@@ -89,8 +89,8 @@ class World(object):
 
         self.iteration_round = 0
         
-        self.treshold = 50
-        self.treshold_2 = 50
+        self.treshold = 30
+        self.treshold_2 = 30
 
         # Used to respawn dead prey
         self.prey_idx = World.N_PREY - 1
@@ -113,7 +113,7 @@ class World(object):
         self.__init__()
 
     def compile_representation(self):
-        # '''Produces a representation of the world as HTML table'''
+        # Produces a representation of the world as HTML table
         table = [[Cell() for k in range(World.N)] for k in range(World.N)]
 
         for i in self.hunters:
@@ -124,9 +124,10 @@ class World(object):
         return ''.join(['<tr>'+str(
                     ''.join([str(cell) for cell in row])
                 )+'</tr>\n' for row in table])
-
+    
+    
     def adjacent_cell(self, x, y, direction):
-        # '''Returns the adjacent cell from position `(x, y)` in the direction
+        # Returns the adjacent cell from position `(x, y)` in the direction
         #    `direction` if this cell is empty and withhin the map, `None` else.
         #    Direction direction is represented as int, as follows:
         #     0 -> Up
@@ -164,7 +165,7 @@ class World(object):
                 return (x, new_y)
 
     def empty_cell(self, pos):
-        # '''Checks if the cell is empty'''
+        # Checks if the cell is empty
         if not pos:
             return False
         for i in self.hunters:
@@ -176,7 +177,7 @@ class World(object):
         return True
 
     def prey_trapped(self, p):
-        # '''Checks if the prey p is trapped between hunters (or walls)'''
+        # Checks if the prey p is trapped between hunters (or walls)
         neighs = [self.adjacent_cell(p.x, p.y, 0),
                     self.adjacent_cell(p.x, p.y, 1),
                     self.adjacent_cell(p.x, p.y, 2),
@@ -192,7 +193,7 @@ class World(object):
         return False
 
     def distance(self, a, b):
-        # '''Computes Manhattan distance between 2 cells'''
+        # Computes Manhattan distance between 2 cells
         
         distance = abs(a.x - b.x) + abs(a.y - b.y)
         
@@ -217,28 +218,17 @@ class World(object):
         
         for j in self.hunters:
             
-            
-            
-    
-            # dist_to_hunt = self.distance(h, j)
-            # if dist_to_hunt == None or dist_to_hunt == []: dist_to_hunt = 0
-            # list_of_distances.append(dist_to_hunt)
-            
-           
-            # dist_list.append(dist_to_hunt)
-            
-            # if h==j:
-            #     continue
-            
-            
+
+                     
             
             dist = self.distance(h, j)
    
             
+
             
-            if dist <= self.treshold and dist > 0:     
+            if dist > 0:     
                 dist = dist
-            else: dist = np.NaN
+            else: dist = np.NaN            
             
             
             if dist != np.NaN:            
@@ -247,25 +237,21 @@ class World(object):
 
             # Vertical
                 if j.x < h.x:
-                    perception_hunters[0] += dist
+                    perception_hunters[0] += 10 / (dist ** 2)
                 elif j.x > h.x:
-                    perception_hunters[2] += dist
+                    perception_hunters[2] += 10 / (dist ** 2)
                 # Horizontal
                 if j.y < h.y:
-                    perception_hunters[3] += dist
+                    perception_hunters[3] += 10 / (dist ** 2)
                 elif j.y > h.y:
-                    perception_hunters[1] += dist
+                    perception_hunters[1] += 10 / (dist ** 2)
                     
             
 
             
-            # perception_hunters[4] = 0
-            
-            # perception_hunters[5] = j.state
-            
             list_of_distances.append(dist)
             
-            # distances_to_hunt = dist_list
+
             
 
         
@@ -287,21 +273,18 @@ class World(object):
 
             # Vertical
                 if j.x < h.x:
-                    perception_prey[0] += dist
+                    perception_prey[0] += 10 / (dist ** 2)
                 elif j.x > h.x:
-                    perception_prey[2] += dist
+                    perception_prey[2] += 10 / (dist ** 2)
                 # Horizontal
                 if j.y < h.y:
-                    perception_prey[3] += dist
+                    perception_prey[3] += 10 / (dist ** 2)
                 elif j.y > h.y:
-                    perception_prey[1] += dist
+                    perception_prey[1] += 10 / (dist ** 2)
                     
             
             
-            
-            # perception_prey[4] = 0
-            
-            # perception_prey[5] = j.state
+
   
         perception_hunters = np.array(perception_hunters)
         perception_prey = np.array(perception_prey)
@@ -317,11 +300,11 @@ class World(object):
             if h==j:
                 continue
             dist = float(self.distance(h, j)) + 1
-            # print(dist)
+       
             
-            if dist <= self.treshold_2 and dist > 0:     
+            if dist > 0:     
                 dist = dist
-            else: dist = np.NaN            
+            else: dist = np.NaN
             
             # Vertical
             if j.x < h.x:
@@ -399,10 +382,7 @@ world = World()
 
 def iterate():
     print("ITERATION:", world.iteration_round)
-    # print(LOG_DIR)
-    # sys.exit()
-    
-    # print("ITERATION:", world.controlCenter.reports[-1])
+
 
     # Check if prey dies
     for i in world.prey:
@@ -439,37 +419,23 @@ def iterate():
     
     for i in world.hunters:
         
-        # world.controlCenter.report_idx.append(world.iteration_round)
-        # print(i.nr)
-        
-        # sys.exit()
         
         i.state = 0
         
         perc_hunters, perc_prey, distances_to_hunt, list_of_mins_prey = world.use_sensors(i) 
         
-        # print(type(distances_to_hunt))
-        # np.savetxt(LOG_DIR + '/' +  f'iter_{world.iteration_round}.csv',  perc_hunters, fmt='%10.1f', delimiter=",")
-        
-        # sys.exit()
-        # print(perc)
+
         
         
         world.controlCenter.report_sensored_prey.append(np.array(perc_prey))
         world.controlCenter.report_sensored_hunter.append(np.array(perc_hunters))
         world.controlCenter.report_dist_to_hunt.append(np.array(distances_to_hunt))
-        
-        # print(np.array(distances_to_hunt))
-        # print(np.shape(np.array(distances_to_hunt)))
-        
+              
         world.controlCenter.report_list_of_mins_prey.append(np.array(list_of_mins_prey))
         
 
 
 
-            
-        # print(np.expand_dims(distances_to_hunt, axis = 1))
-        # print(np.shape(distances_to_hunt))
         
             
     out_prey = np.array(world.controlCenter.report_sensored_prey)       
@@ -486,7 +452,7 @@ def iterate():
     
     if out_list_of_mins_prey[sorted_indecies[0]] != np.NaN:
             
-            for j in range(0, round((world.N_HUNT/3))):
+            for j in range(0, round((world.N_HUNT/4))):
                     
                 world.hunters[sorted_indecies[j]].state = 1
     
@@ -496,7 +462,7 @@ def iterate():
     
     for i in range(0, world.N_HUNT+1):
         
-        if world.hunters[i].state == 0:
+        if world.hunters[i].state != 1:
             
             best_idx_list = np.argsort(out_dist_to_hunt[i,:])
             for j in range (0,2):
@@ -511,26 +477,31 @@ def iterate():
         
          perc_hunters, perc_prey, distances_to_hunt, list_of_mins_prey = world.use_sensors(i)
          
-         if max(perc_prey) < 40.0 or min(perc_hunters):
+         # print(perc_prey)
+         
+         if max(perc_prey) > 0.5:
              
-             i.state = 1
+             i.state = 3
 
                 
                                        
     for i in world.hunters:
         
-        # if i.state == 0:
+        scores = world.score_directions_to_hunter(i)
+                          
+        
+        direction = scores.index(max(scores))        
+        
+        new_pos = world.adjacent_cell(i.x, i.y, direction)
+        pos = (i.x, i.y)        
+        
+
+        if pos==new_pos:
             
-        #     alternatives = [world.adjacent_cell(i.x, i.y, d) for d in range(4)]
-        #     alternatives = [a for a in alternatives if a and world.empty_cell(a)]
-        #     prey_list.append(alternatives)
-    
-        #     if not alternatives:
-        #         # Stay
-        #         continue
-    
-        #     new_pos = random.choice(alternatives)
-        #     i.move(new_pos)
+            i.state = 0
+            
+            
+            
 
         if i.state == 0:            
                 
@@ -561,10 +532,10 @@ def iterate():
             new_pos = world.adjacent_cell(i.x, i.y, direction)
             
             while (not new_pos or not world.empty_cell(new_pos)) and sum(scores) != 0:
-                # If the best direction is blocked, just keep current position
+                
                 if not world.empty_cell(new_pos):
                     moves = False
-                    i.state == 0
+                    # i.state == 0
                     break
                 # Take the next biggest
                 scores[direction] = 0
@@ -573,7 +544,9 @@ def iterate():
             
             if moves and sum(scores) != 0:
                 # Not completly blocked
-                i.move(new_pos)        
+                i.move(new_pos)
+                
+            
             
 
         if i.state == 2:    
@@ -584,9 +557,10 @@ def iterate():
             
             direction = scores.index(max(scores))
             new_pos = world.adjacent_cell(i.x, i.y, direction)
+            pos = (i.x, i.y)
             
             while (not new_pos or not world.empty_cell(new_pos)) and sum(scores) != 0:
-                # If the best direction is blocked, just keep current position
+
                 if not world.empty_cell(new_pos):
                     moves = False
                     i.state == 0
@@ -598,36 +572,38 @@ def iterate():
             
             if moves and sum(scores) != 0:
                 # Not completly blocked
-                i.move(new_pos)   
+                i.move(new_pos)
+                
+
+                
+                
+        if i.state == 3:    
+            
+            moves = True
+            scores = world.score_directions(i)
+            direction = scores.index(max(scores))
+            new_pos = world.adjacent_cell(i.x, i.y, direction)
+            while (not new_pos or not world.empty_cell(new_pos)) and sum(scores) != 0:
+                # If the best direction is blocked, just keep current position
+                if not world.empty_cell(new_pos):
+                    moves = False
+                    break
+                # Take the next biggest
+                scores[direction] = 0
+                direction = scores.index(max(scores))
+                new_pos = world.adjacent_cell(i.x, i.y, direction)
+            if moves and sum(scores) != 0:
+                # Not completly blocked
+                i.move(new_pos)
+
+                 
     
     
-    # print(sorted_indecies)
-    # sys.exit()
     
-    # print(np.shape(np.expand_dims(out_list_of_mins_prey, axis=1)))
-    # print(np.shape(np.expand_dims(np.arange(0, out_list_of_mins_prey.size).T , axis=1)))
-    
-    # print(out_list_of_mins_prey)
-    # print(np.arange(0, out_list_of_mins_prey.size))
-    
-    
-    # a = np.expand_dims(out_list_of_mins_prey, axis=1)
-    # b = np.expand_dims(np.arange(0, out_list_of_mins_prey.size), axis=1)
-    
-    # c = np.append(b,a,axis=1)
-    # c =  c[np.lexsort(np.fliplr(c).T)]
-    
-    # print(c)
-    # sys.exit()
-    # print(np.min(out_dist_to_hunt))
-    
-    # print(out_dist_to_hunt)
-    # print(np.shape(np.squeeze(world.controlCenter.report_dist_to_hunt))) 
-    
-    np.savetxt(LOG_DIR + '/' +  f'last_iter_prey.csv', out_prey, fmt='%10.1f', delimiter=",")
-    np.savetxt(LOG_DIR + '/' +  f'last_iter_hunter.csv', out_hunter, fmt='%10.1f', delimiter=",")
-    np.savetxt(LOG_DIR + '/' +  f'last_iter_dist_to_hunt.csv', out_dist_to_hunt, fmt='%10.1f', delimiter=",")
-    np.savetxt(LOG_DIR + '/' +  f'last_iter_out_list_of_mins_prey.csv', sorted_indecies, fmt='%10.1f', delimiter=",")
+    np.savetxt(LOG_DIR + '/' +  'last_iter_prey.csv', out_prey, fmt='%10.1f', delimiter=",")
+    np.savetxt(LOG_DIR + '/' +  'last_iter_hunter.csv', out_hunter, fmt='%10.1f', delimiter=",")
+    np.savetxt(LOG_DIR + '/' +  'last_iter_dist_to_hunt.csv', out_dist_to_hunt, fmt='%10.1f', delimiter=",")
+    np.savetxt(LOG_DIR + '/' +  'last_iter_out_list_of_mins_prey.csv', sorted_indecies, fmt='%10.1f', delimiter=",")
     
     
     
