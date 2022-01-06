@@ -89,7 +89,7 @@ class World(object):
 
         self.iteration_round = 0
         
-        self.treshold = 50
+        self.treshold = 30
         self.treshold_2 = 30
 
         # Used to respawn dead prey
