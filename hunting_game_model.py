@@ -448,7 +448,7 @@ def iterate():
     
     
     
-    sorted_indecies = np.argsort(out_list_of_mins_prey)
+    sorted_indecies = np.flip(np.argsort(out_list_of_mins_prey), axis=0)
     
     for i in world.hunters:
     
