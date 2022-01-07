@@ -35,7 +35,7 @@ class ControlCenter:
 class Cell:
     def __init__(self, nr=0, table_size=0, already_filled=[]):
         
-        self.state = 0
+        self.state = 1
         
         self.nr = nr
         self.x = int(random.uniform(0, table_size) - 1)
