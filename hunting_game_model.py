@@ -289,7 +289,7 @@ class World(object):
         perception_hunters = np.array(perception_hunters)
         perception_prey = np.array(perception_prey)
         distances_to_hunt = np.array(list_of_distances)
-        list_of_mins_prey = np.nanmin(perception_prey)        
+        list_of_mins_prey = np.nanmax(perception_prey)        
             
         return perception_hunters, perception_prey, distances_to_hunt, list_of_mins_prey
 
