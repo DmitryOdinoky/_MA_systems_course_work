@@ -35,7 +35,7 @@ class ControlCenter:
 class Cell:
     def __init__(self, nr=0, table_size=0, already_filled=[]):
         
-        self.state = 1
+        self.state = 0
         
         self.nr = nr
         self.x = int(random.uniform(0, table_size) - 1)
@@ -454,7 +454,7 @@ def iterate():
     
         if out_list_of_mins_prey[sorted_indecies[0]] != np.NaN:
                 
-                for j in range(0, round((world.N_HUNT/4))):
+                for j in range(0, round((world.N_HUNT/3))):
                         
                     world.hunters[sorted_indecies[j]].state = 1
     
